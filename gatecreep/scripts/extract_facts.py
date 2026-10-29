@@ -6,13 +6,16 @@ import argparse
 import ast
 import json
 import math
+import os
+import stat
 import sys
+import tempfile
 import tokenize
 from pathlib import Path
 
 
 SCHEMA_VERSION = 2
-SKIP_DIRS = {".git", "__pycache__", ".venv", "venv", "node_modules"}
+SKIP_DIRS = {".git", "__pycache__", ".venv", "venv", "node_modules", ".uv-cache"}
 DOCUMENT_KINDS = {
     ".md": "markdown",
     ".json": "json",
@@ -111,6 +114,8 @@ class PythonFacts(ast.NodeVisitor):
         self.gates = []
         self.flows = []
         self.imports = {}
+        # ponytail: literal names cover direct assignments only; mutation needs dataflow analysis.
+        self.literal_values = {}
         self.command_vars = {}
         self.command_calls = {}
         self.conditions = []
@@ -162,13 +167,16 @@ class PythonFacts(ast.NodeVisitor):
         qualname = f"{prefix}.{node.name}" if prefix else node.name
         function_id = f"{self.module}.{qualname}" if self.module and not parent else qualname
         tool_decorators = []
+        mcp_role = None
         for decorator in node.decorator_list:
             target = decorator.func if isinstance(decorator, ast.Call) else decorator
             name = ast.unparse(target).rsplit(".", 1)[-1]
-            if name == "tool" or name.endswith("_tool"):
+            if isinstance(target, ast.Attribute) and name in {"call_tool", "list_tools"}:
+                mcp_role = "dispatcher" if name == "call_tool" else "listing"
+            elif name == "tool" or name.endswith("_tool"):
                 tool_decorators.append(decorator)
         cap = None
-        if parent is None and (not node.name.startswith("_") or node.name == "main" or tool_decorators):
+        if parent is None and (not node.name.startswith("_") or node.name == "main" or tool_decorators or mcp_role):
             cap = {
                 "fact_type": "capability",
                 "id": function_id,
@@ -180,6 +188,9 @@ class PythonFacts(ast.NodeVisitor):
                 "returns": [],
             }
             self.capabilities.append(cap)
+            if mcp_role:
+                cap["mcp_role"] = mcp_role
+                cap["mcp_role_status"] = "inferred"
         for decorator in tool_decorators:
             if isinstance(decorator, ast.Call):
                 name_arg = next((kw.value for kw in decorator.keywords if kw.arg == "name"), None)
@@ -196,6 +207,8 @@ class PythonFacts(ast.NodeVisitor):
         self.current_function = function_id
         self._decorators(node, function_id, function_id)
         self.current_returns = []
+        previous_literals = self.literal_values
+        self.literal_values = self.literal_values.copy()
         self.function_tail = node.body[-1] if node.body else None
         for statement in node.body:
             self.visit(statement)
@@ -204,10 +217,12 @@ class PythonFacts(ast.NodeVisitor):
         self.current_function = parent
         self.current_returns = previous_returns
         self.function_tail = previous_tail
+        self.literal_values = previous_literals
 
     def visit_Import(self, node: ast.Import):
         for alias in node.names:
-            self.imports[alias.asname or alias.name.split(".", 1)[0]] = alias.name
+            base = alias.name.split(".", 1)[0]
+            self.imports[alias.asname or base] = alias.name if alias.asname else base
 
     def visit_ImportFrom(self, node: ast.ImportFrom):
         if node.level:
@@ -221,6 +236,12 @@ class PythonFacts(ast.NodeVisitor):
                 self.imports[alias.asname or alias.name] = f"{base}.{alias.name}" if base else alias.name
 
     def visit_Assign(self, node: ast.Assign):
+        for target in node.targets:
+            if isinstance(target, ast.Name):
+                try:
+                    self.literal_values[target.id] = ast.literal_eval(node.value)
+                except (ValueError, TypeError):
+                    self.literal_values.pop(target.id, None)
         if (
             self.current_function is None
             and isinstance(node.value, ast.Constant)
@@ -251,7 +272,54 @@ class PythonFacts(ast.NodeVisitor):
         })
         operation = name.rsplit(".", 1)[-1]
         receiver = node.func.value.id if isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name) else None
-        if operation == "add_parser":
+        base, _, attribute = name.partition(".")
+        resolved_name = self.imports.get(base, base) + (f".{attribute}" if attribute else "")
+        if base in self.imports and resolved_name == "mcp.types.Tool":
+            keywords = {kw.arg: kw.value for kw in node.keywords if kw.arg}
+            values = {}
+            for field in ("name", "description", "inputSchema"):
+                value_node = keywords.get(field)
+                try:
+                    value = self.literal_values[value_node.id] if isinstance(value_node, ast.Name) else ast.literal_eval(value_node)
+                    if not isinstance(value, dict if field == "inputSchema" else str):
+                        raise ValueError("unexpected declaration type")
+                    values[field] = json_literal(value, ast.unparse(value_node))
+                except (KeyError, ValueError, TypeError):
+                    if field != "description" or value_node is not None:
+                        self.coverage.append({
+                            "fact_type": "coverage",
+                            "kind": {"name": "dynamic-agent-name", "inputSchema": "unresolved-tool-schema",
+                                     "description": "unresolved-tool-description"}[field],
+                            "status": "confirmed", "source": source_ref(self.path, node),
+                            "message": f"MCP Tool {field} is not a supported literal",
+                        })
+            if "name" in values:
+                capability_id = f"{self.module}.mcp:{node.lineno}:{node.col_offset}"
+                self.capabilities.append({
+                    "fact_type": "capability", "id": capability_id,
+                    "kind": "agent-tool", "name": values["name"], "status": "confirmed",
+                    "source": source_ref(self.path, node), "declaration_kind": "mcp-tool",
+                    "description": values.get("description"), "input_schema": values.get("inputSchema"),
+                    "implementation_status": "unknown",
+                })
+                self.coverage.append({
+                    "fact_type": "coverage", "kind": "unresolved-tool-implementation", "status": "confirmed",
+                    "source": source_ref(self.path, node), "capability_id": capability_id,
+                    "message": "MCP declaration has no confirmed per-tool implementation mapping",
+                })
+        elif resolved_name == "argparse.ArgumentParser":
+            command = {
+                "fact_type": "capability",
+                "id": f"{self.module}.cli.root:{node.lineno}:{node.col_offset}",
+                "kind": "cli-command",
+                "name": self.module,
+                "status": "confirmed",
+                "source": source_ref(self.path, node),
+                "arguments": [],
+            }
+            self.capabilities.append(command)
+            self.command_calls[id(node)] = command
+        elif operation == "add_parser":
             command_name = literal(node.args[0]) if node.args else None
             if isinstance(command_name, str):
                 command = {
@@ -353,6 +421,7 @@ class PythonFacts(ast.NodeVisitor):
     def visit_Raise(self, node: ast.Raise):
         self.add_gate(node, "raise", "reject",
                       exception=ast.unparse(node.exc) if node.exc else None)
+        self.generic_visit(node)
 
     def visit_ExceptHandler(self, node: ast.ExceptHandler):
         self.add_gate(node, "exception-handler", "handle",
@@ -368,11 +437,13 @@ class PythonFacts(ast.NodeVisitor):
 
     def visit_For(self, node: ast.For):
         self.add_gate(node, "loop", "iterate", expression=ast.unparse(node.iter))
+        self.visit(node.iter)
         for statement in node.body + node.orelse:
             self.visit(statement)
 
     def visit_While(self, node: ast.While):
         self.add_gate(node, "loop", "repeat", expression=ast.unparse(node.test))
+        self.visit(node.test)
         for statement in node.body + node.orelse:
             self.visit(statement)
 
@@ -411,6 +482,12 @@ def parse_python(path: Path, relative: Path) -> tuple[list[dict], list[dict], li
         }]
     extractor = PythonFacts(relative.as_posix(), module_name(relative))
     extractor.visit(tree)
+    role = "test" if (
+        {"test", "tests"} & set(relative.parts[:-1])
+        or relative.name.startswith("test_") or relative.name.endswith("_test.py")
+    ) else "unknown"
+    for fact in extractor.capabilities + extractor.gates + extractor.flows:
+        fact["source_role"] = role
     return extractor.capabilities, extractor.gates, extractor.flows, extractor.coverage
 
 
@@ -485,6 +562,7 @@ def extract_project(root: Path) -> dict:
     root = root.resolve()
     if not root.is_dir():
         raise ValueError(f"project directory does not exist: {root}")
+    # ponytail: facts and links still fit in RAM; larger scans need disk-backed fact/link storage.
     facts = {
         "schema_version": SCHEMA_VERSION,
         "root": str(root),
@@ -494,33 +572,60 @@ def extract_project(root: Path) -> dict:
         "documents": [],
         "coverage": [],
     }
-    for path in sorted(root.rglob("*")):
-        if not path.is_file():
-            continue
-        relative = path.relative_to(root)
-        if set(relative.parts[:-1]) & SKIP_DIRS:
-            continue
-        if path.suffix in DOCUMENT_KINDS:
-            facts["documents"].append({
-                "fact_type": "document",
-                "path": relative.as_posix(),
-                "kind": DOCUMENT_KINDS[path.suffix],
-            })
-        elif path.suffix == ".py":
+    def gap(path, kind, message):
+        facts["coverage"].append({
+            "fact_type": "coverage", "kind": kind, "status": "confirmed",
+            "source": source_ref(Path(path).relative_to(root).as_posix(), ast.Pass()),
+            "message": message,
+        })
+
+    def walk_error(exc):
+        gap(exc.filename or root, "unreadable-directory", str(exc))
+
+    for directory, dirs, files in os.walk(root, topdown=True, onerror=walk_error, followlinks=False):
+        parent = Path(directory)
+        retained = []
+        for name in sorted(dirs):
+            path = parent / name
             try:
-                capabilities, gates, flows, coverage = parse_python(path, relative)
+                attributes = path.lstat()
+                linked = stat.S_ISLNK(attributes.st_mode) or bool(
+                    getattr(attributes, "st_file_attributes", 0) & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)
+                )
+                reason = None
+                if linked:
+                    reason = "directory link"
+                elif name in SKIP_DIRS:
+                    reason = "excluded directory name"
+                elif (path / "pyvenv.cfg").is_file():
+                    reason = "virtual environment marker: pyvenv.cfg"
+                if reason:
+                    gap(path, "excluded-directory", reason)
+                else:
+                    retained.append(name)
             except OSError as exc:
-                capabilities, gates, flows, coverage = [], [], [], [{
-                    "fact_type": "coverage",
-                    "kind": "unreadable-file",
-                    "status": "confirmed",
-                    "source": source_ref(relative.as_posix(), ast.Pass()),
-                    "message": str(exc),
-                }]
-            facts["capabilities"].extend(capabilities)
-            facts["gates"].extend(gates)
-            facts["flows"].extend(flows)
-            facts["coverage"].extend(coverage)
+                gap(path, "unreadable-directory", str(exc))
+        dirs[:] = retained
+        for name in sorted(files):
+            path = parent / name
+            relative = path.relative_to(root)
+            try:
+                if not path.resolve().is_relative_to(root):
+                    gap(path, "excluded-file", "file link resolves outside target")
+                    continue
+                if path.suffix in DOCUMENT_KINDS:
+                    facts["documents"].append({
+                        "fact_type": "document", "path": relative.as_posix(),
+                        "kind": DOCUMENT_KINDS[path.suffix],
+                    })
+                elif path.suffix == ".py":
+                    capabilities, gates, flows, coverage = parse_python(path, relative)
+                    facts["capabilities"].extend(capabilities)
+                    facts["gates"].extend(gates)
+                    facts["flows"].extend(flows)
+                    facts["coverage"].extend(coverage)
+            except OSError as exc:
+                gap(path, "unreadable-file", str(exc))
     link_facts(facts)
     return facts
 
@@ -529,12 +634,24 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("project", type=Path)
     args = parser.parse_args(argv)
+    phase = "extraction"
     try:
         facts = extract_project(args.project)
-        output = json.dumps(facts, ensure_ascii=False, indent=2, allow_nan=False)
-    except (OSError, ValueError, TypeError) as exc:
-        parser.exit(2, f"extract_facts: {exc}\n")
-    sys.stdout.write(output + "\n")
+        phase = "serialization"
+        staging_dir = Path(tempfile.gettempdir()).resolve()
+        if staging_dir.is_relative_to(args.project.resolve()):
+            raise ValueError("temporary directory must be outside target project")
+        with tempfile.TemporaryFile(mode="w+", encoding="ascii", dir=staging_dir) as staged:
+            json.dump(facts, staged, ensure_ascii=True, indent=2, allow_nan=False)
+            staged.write("\n")
+            staged.seek(0)
+            phase = "output"
+            while chunk := staged.read(65536):
+                sys.stdout.write(chunk)
+            sys.stdout.flush()
+    except (OSError, UnicodeError, ValueError, TypeError, MemoryError) as exc:
+        message = str(exc).encode("ascii", errors="backslashreplace").decode("ascii").replace("\n", " ").replace("\r", " ")
+        parser.exit(2, f"extract_facts: {phase}: {type(exc).__name__}: {message}\n")
     return 0
 
 

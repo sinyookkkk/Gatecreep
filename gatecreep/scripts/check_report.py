@@ -58,7 +58,10 @@ def validate_report(text: str) -> list[str]:
         for field in FINDING_FIELDS:
             if not re.search(rf"^-\s*{re.escape(field)}：", finding, re.MULTILINE):
                 errors.append(f"主要发现缺少字段：{field}")
-        causal = re.search(r"^-\s*因果链：(.*)$", finding, re.MULTILINE)
+        causal = re.search(
+            r"^-\s*因果链：([^\n]*(?:\n(?![ \t]*-\s*[^\n：]+：|#{1,6}\s)[^\n]*)*)",
+            finding, re.MULTILINE,
+        )
         if causal and not re.search(r"\[(静态事实|模型推断)\]", causal.group(1)):
             errors.append("因果链必须标注 [静态事实] 或 [模型推断]")
 

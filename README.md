@@ -1,49 +1,58 @@
 # Gatecreep
 
-面向 Python Agent、CLI 和 Skill 项目的只读门禁审计 Skill，用于识别合法任务被阻断、过严校验、硬编码限制、静默截断等问题。
+**审计 Python Agent、CLI 和 Skill 项目中阻断合法任务的校验、硬编码限制与静默截断。**
 
-## 项目架构
+Read-only gate auditing for Python AI agents, CLI tools and skills.
 
-Gatecreep 由 Skill 指令、两个独立的 Python 命令行脚本和审计参考文档组成。流程由使用 Skill 的模型执行，脚本不自动编排审计或生成语义结论。Python 脚本仅依赖标准库。
+Gatecreep 是由模型执行的审计 Skill：标准库脚本提取静态事实，模型结合项目契约判断影响，报告给出源码证据、因果链、反证与覆盖缺口。
 
-```mermaid
-flowchart TD
-    target[目标项目：Python 源码与契约文档] -->|只读解析| extract[extract_facts.py：静态事实提取]
-    extract -->|JSON 事实与覆盖缺口| model[模型：公开功能、合法任务、因果链与反证分析]
-    skill[SKILL.md：流程与完成条件] -->|约束审计步骤| model
-    method[audit-method.md：证据与分档规则] -->|指导判断| model
-    target -->|按需读取源码和契约| model
-    model -->|按模板撰写| report[人工审计报告：位于目标项目之外]
-    format[report-format.md：报告契约] -->|规定章节与字段| report
-    report -->|格式与证据标记校验| check[check_report.py]
-    check -->|修正后交付| human[人工复核：修改作为独立任务]
+## 一条真实发现
+
+Gatecreep 自审发现：**同一条因果链写成一行能通过，按方法文档换行却被报告检查器拒绝。**
+
+| 合法报告的写法 | 历史版本结果 | 当前版本结果 |
+|---|---|---|
+| 单行因果链，带 `[静态事实]` | 通过 | 通过 |
+| 多行箭头结构，标记放在续行 | 拒绝：“因果链必须标注…” | 通过 |
+
+历史检查器只读取 `- 因果链：` 的首行，遗漏了续行上的证据标记。修复扩大了字段读取范围，同时保留无标记时的拒绝。
+
+**[查看真实示例报告](docs/example-report.md)**：目标是历史提交 `97bb54c` 中的因果链校验路径，包含契约、源码位置、最小对照和反证。这是限定范围自审；该问题已在当前代码修复，不能代表整个项目的审计结论。
+
+## 可以帮你检查什么
+
+| 任务失败线索 | 报告需要回答 |
+|---|---|
+| 合法输入被拒绝 | 哪条校验与已声明的输入范围冲突？ |
+| 单项失败终止整批任务 | 失败是否可以恢复，处理范围是否有依据？ |
+| 硬编码数量或资源限制 | 限制保护什么，是否有配置或恢复路径？ |
+| 结果被静默截断 | 哪条路径丢了结果，是否仍被当作完整成功？ |
+
+这些是审计线索，不能直接当作缺陷。认证、授权、平台约束等合理门禁会保留并说明依据。
+
+## 快速开始
+
+需要 Python 3.10+，以及能读取本地项目、遵循 Skill 并运行辅助脚本的 AI 工具。
+
+```bash
+git clone https://github.com/sinyookkkk/Gatecreep.git
 ```
 
-[交互式架构图](docs/architecture.html) · [架构图源文件](docs/architecture.json)。下载 HTML 后用浏览器打开，可切换主题、缩放和查看关系。
+在所用 AI 工具的对话里指定克隆后的 `gatecreep/SKILL.md`，例如：
 
-### 模块职责
+```text
+请遵循 /path/to/Gatecreep/gatecreep/SKILL.md，
+审计 /path/to/my-agent，重点检查输入校验、批量失败处理和结果完整性。
+将报告保存到目标项目之外的 /path/to/reports/my-agent.md。
+```
 
-| 模块 | 职责 |
-|---|---|
-| [Skill 入口](gatecreep/SKILL.md) | 定义输入、只读边界、执行顺序和完成条件 |
-| [事实提取器](gatecreep/scripts/extract_facts.py) | 遍历目标目录，使用文本与 AST 解析提取能力、门禁和调用事实；关联静态调用与可达门禁 |
-| [审计方法](gatecreep/references/audit-method.md) | 指导模型建立公开功能清单、合法任务、失败因果链、证据分档与反证检查 |
-| [报告模板](gatecreep/references/report-format.md) | 规定报告章节、主要发现字段和事实与建议边界 |
-| [报告检查器](gatecreep/scripts/check_report.py) | 检查必要章节、主要发现分档、字段和因果链标记，以及覆盖缺口下的错误完整性声明 |
-| [回归检查](gatecreep/tests/check_extract_facts.py) | 验证事实提取行为、CLI 扫描、严格 JSON 解析和 ID 唯一性 |
-| [OpenSpec 规格](openspec/specs/python-fact-extraction/spec.md) | 保存事实提取的行为契约；变更历史位于 `openspec/changes/archive/` |
+将示例路径替换为本机绝对路径。也可以将整个 `gatecreep/` 放入工具支持的 Skill 目录后按名称加载，保留 references/ 和 scripts/。
 
-### 数据与执行边界
+审计结合 Python 实现与项目契约；系统指令、模型自身行为和运行权限导致的拒绝，无法仅凭这些代码解释。跨语言实现和动态路径会作为覆盖边界披露。报告只读，修复作为独立任务进行。
 
-事实提取输出采用 `schema_version: 2`，包含 `capabilities`、`gates`、`flows`、`documents` 和 `coverage`。调用关系区分 `confirmed` 与 `inferred`；动态路径和解析缺口必须保留在分析中。脚本事实本身不构成“过度门禁”结论。
+## 详细使用方式
 
-模型结合实现与契约，将问题分为契约冲突、疑似过度门禁、合理门禁、非门禁问题或证据不足。报告检查器只检查结构与部分证据边界，不能证明结论正确，也不替代人工复核。
-
-审计不导入或执行目标代码，不在目标项目内写入报告、缓存、配置或修复。报告完成后停止，修改目标项目属于用户确认后的独立任务。过度设计分析默认关闭，仅在明确请求时启用。
-
-## 使用方式
-
-### 加载 Skill
+### 加载与运行环境
 
 将本仓库的 `gatecreep/` 目录完整放入所用 AI 工具支持的 Skill 目录，保留其中的 `SKILL.md`、`references/` 和 `scripts/`。按该工具的方式加载或选择 `gatecreep`；也可以在对话中指定本地 `gatecreep/SKILL.md`，要求模型遵循它执行审计。
 
@@ -83,4 +92,52 @@ Skill 会先提取静态事实，结合项目文档与实现建立公开功能�
 请使用 gatecreep Skill，结合 E:/projects/my-agent 的源码，
 复核 E:/reports/my-agent-gatecreep.md 中的发现，检查证据、因果链和反证是否充分。
 ```
+
+
+## 项目架构
+
+Gatecreep 由 Skill 指令、两个独立的 Python 命令行脚本和审计参考文档组成。流程由使用 Skill 的模型执行，脚本不自动编排审计或生成语义结论。Python 脚本仅依赖标准库。
+
+```mermaid
+flowchart TD
+    target[目标项目：Python 源码与契约文档] -->|只读解析| extract[extract_facts.py：静态事实提取]
+    extract -->|JSON 事实与覆盖缺口| model[模型：公开功能、合法任务、因果链与反证分析]
+    skill[SKILL.md：流程与完成条件] -->|约束审计步骤| model
+    method[audit-method.md：证据与分档规则] -->|指导判断| model
+    target -->|按需读取源码和契约| model
+    model -->|按模板撰写| report[人工审计报告：位于目标项目之外]
+    format[report-format.md：报告契约] -->|规定章节与字段| report
+    report -->|格式与证据标记校验| check[check_report.py]
+    check -->|修正后交付| human[人工复核：修改作为独立任务]
+```
+
+[交互式架构图](docs/architecture.html) · [架构图源文件](docs/architecture.json)。下载 HTML 后用浏览器打开，可切换主题、缩放和查看关系。
+
+### 模块职责
+
+| 模块 | 职责 |
+|---|---|
+| [Skill 入口](gatecreep/SKILL.md) | 定义输入、只读边界、执行顺序和完成条件 |
+| [事实提取器](gatecreep/scripts/extract_facts.py) | 遍历目标目录，使用文本与 AST 解析提取能力、门禁和调用事实；关联静态调用与可达门禁 |
+| [审计方法](gatecreep/references/audit-method.md) | 指导模型建立公开功能清单、合法任务、失败因果链、证据分档与反证检查 |
+| [报告模板](gatecreep/references/report-format.md) | 规定报告章节、主要发现字段和事实与建议边界 |
+| [报告检查器](gatecreep/scripts/check_report.py) | 检查必要章节、主要发现分档、字段和因果链标记，以及覆盖缺口下的错误完整性声明 |
+| [回归检查](gatecreep/tests/check_extract_facts.py) | 验证事实提取行为、CLI 扫描、严格 JSON 解析和 ID 唯一性 |
+| [OpenSpec 规格](openspec/specs/python-fact-extraction/spec.md) | 保存事实提取的行为契约；变更历史位于 `openspec/changes/archive/` |
+
+### 数据与执行边界
+
+事实提取输出采用 `schema_version: 2`，包含 `capabilities`、`gates`、`flows`、`documents` 和 `coverage`。调用关系区分 `confirmed` 与 `inferred`；动态路径和解析缺口必须保留在分析中。脚本事实本身不构成“过度门禁”结论。
+
+argparse 提取支持直接赋值的 `ArgumentParser`（包括导入别名）及直接声明的参数，并保留子命令参数；跨函数传递、动态构造等写法不保证完整解析。空 `coverage` 不代表完整覆盖，仍需结合源码复核。
+
+扫描会在进入虚拟环境（含 `pyvenv.cfg`）和 `.uv-cache` 等缓存前剪枝，并在 `coverage` 记录排除路径与原因。测试事实保留，使用 `source_role: test` 标记；其他路径为 `unknown`，不能据此认定是产品代码。
+
+MCP 提取支持静态 `mcp.types.Tool` 声明、导入别名和直接赋值的字面量输入 Schema。工具声明与 `call_tool` / `list_tools` 分派、列举函数分开记录；无法确认的逐工具实现映射保留为覆盖缺口，不自动关联共享分派器的所有门禁。
+
+JSON 使用 ASCII 转义，在目标目录外完成临时序列化后分块输出；序列化失败不输出 JSON 前缀，写出或刷新失败仍可能留下部分数据。非零退出时必须丢弃 stdout 并保留 stderr。事实与调用关联仍占用内存，大项目应限定范围；输出不默认截断，也不保证任意规模都能完成。
+
+模型结合实现与契约，将问题分为契约冲突、疑似过度门禁、合理门禁、非门禁问题或证据不足。报告检查器只检查结构与部分证据边界，不能证明结论正确，也不替代人工复核。
+
+审计不导入或执行目标代码，不在目标项目内写入报告、缓存、配置或修复。报告完成后停止，修改目标项目属于用户确认后的独立任务。过度设计分析默认关闭，仅在明确请求时启用。
 

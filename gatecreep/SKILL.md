@@ -70,4 +70,13 @@ bytes/complex/Ellipsis/非有限浮点值使用 Python repr 文本。消费者�
 链式比较每段使用独立 ID 后缀及相邻 left/right；嵌套函数 ID 不重复模块前缀。
 脚本先完成严格 JSON 序列化再输出；序列化失败非零退出并写 stderr，不留下 JSON 前缀。
 
+JSON 以 ASCII 转义写入目标目录之外的临时文件，序列化成功后分块写出并刷新 stdout。提取、序列化、临时存储或输出的已知异常以 exit 2 和阶段诊断报告；写出阶段可能已有部分 stdout，任何非零退出都必须丢弃 stdout 并保留 stderr。临时目录不可位于目标项目内。事实和关联仍驻留内存，不能保证任意规模扫描成功，不默认截断。
+
+扫描在进入既有排除目录、`.uv-cache` 和含 `pyvenv.cfg` 的虚拟环境前剪枝；每个排除目录产生一条 `excluded-directory`，含路径与原因。目录链接和 Windows junction 不跟随，指向目标之外的文件链接跳过；枚举失败记为 `unreadable-directory`。这些条目说明范围，不代表目标项目存在缺陷；不解析 `.gitignore`。
+
+capabilities、gates、flows 的 `source_role` 为路径启发式：目录段 `test` / `tests` 或文件名 `test_*.py` / `*_test.py` 标为 `test`，其余为 `unknown`。测试事实不删除；建立产品功能清单时区分测试候选，测试可用作契约与反证，unknown 不能当成已确认产品代码。
+
+静态 `mcp.types.Tool` 声明（含导入别名）使用 `declaration_kind: mcp-tool`，保留 description 和 input_schema；仅解析字面量或直接赋值的字面量 Schema，不跟踪变异或通用数据流。动态名称、未知 Schema 和逐工具实现未确认分别记录覆盖缺口；`implementation_status: unknown` 不产生虚构实现链接。属性装饰器 `call_tool` / `list_tools` 仅按语法标为 `mcp_role: dispatcher` / `listing`，角色状态为 inferred，不能据此确认注册方身份或将其算成一个具名工具。
+
 回归检查：`python -I <skill-dir>/tests/check_extract_facts.py`，含本仓库 CLI 扫描、严格 JSON 解析和 ID 唯一性检查。
+另运行 `tests/check_audit_regressions.py` 和 `tests/check_scan_reliability.py`，检查 CLI 参数、多行报告、目录边界、输出失败和 MCP 声明。
