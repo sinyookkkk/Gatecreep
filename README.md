@@ -43,17 +43,44 @@ flowchart TD
 
 ## 使用方式
 
-在支持 Skill 的工具中加载 `gatecreep/SKILL.md`，提供目标项目路径及可选审计范围。模型按 Skill 流程完成分析；以下命令用于其中的事实提取和报告检查：
+### 加载 Skill
 
-```bash
-python -I gatecreep/scripts/extract_facts.py <target-project>
-python -I gatecreep/scripts/check_report.py <report.md>
+将本仓库的 `gatecreep/` 目录完整放入所用 AI 工具支持的 Skill 目录，保留其中的 `SKILL.md`、`references/` 和 `scripts/`。按该工具的方式加载或选择 `gatecreep`；也可以在对话中指定本地 `gatecreep/SKILL.md`，要求模型遵循它执行审计。
+
+运行环境需要能够读取目标项目文件，并提供 Python 3.10 或更新版本来运行辅助脚本。事实提取和报告检查由模型按 Skill 流程调用，用户通过对话提出审计需求即可。
+
+### 发起审计
+
+提供目标项目路径即可开始，例如：
+
+```text
+请使用 gatecreep Skill 审计 E:/projects/my-agent，检查是否存在阻断合法任务的过度门禁。
+将报告保存到 E:/reports/my-agent-gatecreep.md。
 ```
 
-保存事实输出并记录非零退出或覆盖缺口；报告必须位于目标项目之外。
+可以限定功能或文件范围：
 
-运行事实提取回归检查：
-
-```bash
-python -I gatecreep/tests/check_extract_facts.py
+```text
+请使用 gatecreep Skill 审计 E:/projects/my-cli，重点检查批量导入功能，
+包括输入校验、数量限制、单项失败处理和结果完整性。
+将报告保存到 E:/reports/my-cli-gatecreep.md。
 ```
+
+| 输入 | 说明 |
+|---|---|
+| 目标项目路径 | 必填，指向要审计的 Python Agent、CLI 或 Skill 项目 |
+| 功能或文件范围 | 可选，用于限定本次审计范围 |
+| 报告输出位置 | 可选，必须位于目标项目之外 |
+| 过度设计分析 | 默认关闭；需要时明确要求“同时分析过度设计” |
+
+### 查看结果与后续处理
+
+Skill 会先提取静态事实，结合项目文档与实现建立公开功能清单，再围绕合法任务分析门禁及其影响，最终交付 Markdown 审计报告。报告包含主要发现、源码证据和因果链、合理门禁、待人工复核项，以及覆盖缺口和不确定性。
+
+审计只读取目标项目，不执行目标代码或自动修改项目。审阅报告并确认具体发现后，可以另行要求模型实施修改。已有报告也可以交给此 Skill 复核：
+
+```text
+请使用 gatecreep Skill，结合 E:/projects/my-agent 的源码，
+复核 E:/reports/my-agent-gatecreep.md 中的发现，检查证据、因果链和反证是否充分。
+```
+
