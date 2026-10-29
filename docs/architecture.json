@@ -1,0 +1,134 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Gatecreep 项目架构",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1100,
+      700
+    ]
+  },
+  "components": [
+    {
+      "id": "target",
+      "type": "external",
+      "label": "目标项目",
+      "sublabel": "Python 源码与契约文档",
+      "pos": [
+        50,
+        170
+      ],
+      "size": [
+        210,
+        80
+      ]
+    },
+    {
+      "id": "facts",
+      "type": "backend",
+      "label": "静态事实提取",
+      "sublabel": "extract_facts.py · AST / 文本",
+      "pos": [
+        440,
+        170
+      ],
+      "size": [
+        230,
+        80
+      ]
+    },
+    {
+      "id": "review",
+      "type": "backend",
+      "label": "模型语义审计",
+      "sublabel": "SKILL.md + audit-method.md",
+      "pos": [
+        440,
+        440
+      ],
+      "size": [
+        230,
+        80
+      ]
+    },
+    {
+      "id": "report",
+      "type": "external",
+      "label": "人工审计报告",
+      "sublabel": "report-format.md · 人工复核",
+      "pos": [
+        840,
+        440
+      ],
+      "size": [
+        210,
+        80
+      ]
+    },
+    {
+      "id": "check",
+      "type": "backend",
+      "label": "报告格式检查",
+      "sublabel": "check_report.py",
+      "pos": [
+        840,
+        170
+      ],
+      "size": [
+        210,
+        80
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "from": "target",
+      "to": "facts",
+      "label": "只读解析"
+    },
+    {
+      "from": "facts",
+      "to": "review",
+      "label": "JSON 事实与覆盖缺口",
+      "labelDy": 80
+    },
+    {
+      "from": "review",
+      "to": "report",
+      "label": "证据链与分档结论"
+    },
+    {
+      "from": "report",
+      "to": "check",
+      "label": "校验章节及证据标记"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "事实层",
+      "items": [
+        "标准库解析，不导入或执行目标代码",
+        "schema_version: 2 保留事实与不确定性"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "判断层",
+      "items": [
+        "模型按合法任务分析门禁与反证",
+        "静态事实不直接等同于过度门禁"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "交付边界",
+      "items": [
+        "报告写入目标项目之外",
+        "报告完成后停止；修复为独立任务"
+      ]
+    }
+  ]
+}
