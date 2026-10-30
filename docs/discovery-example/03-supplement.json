@@ -1,0 +1,129 @@
+{
+  "discovery_version": 1,
+  "stage": "supplement",
+  "snapshot_id": "5be58399d53f728b8d679f28b18ce8d630ad58e14abf6f98bd3074617e4d3d5c",
+  "features": [
+    {
+      "id": "s:export",
+      "name": "export",
+      "purpose": "export",
+      "status": "unknown",
+      "reason": "source reviewed; dynamic behavior not executed",
+      "candidate_ids": [],
+      "evidence": [
+        "doc"
+      ],
+      "inputs": {
+        "status": "known",
+        "value": "action and value",
+        "reason": "fixture source"
+      },
+      "outputs": {
+        "status": "unknown",
+        "value": null,
+        "reason": "implementation absent from inspected dispatch"
+      },
+      "success_criteria": {
+        "status": "known",
+        "value": "return selected result",
+        "reason": "fixture source"
+      },
+      "preconditions": {
+        "status": "known",
+        "value": "supported action",
+        "reason": "fixture source"
+      },
+      "side_effects": {
+        "status": "known",
+        "value": "none in shown actions",
+        "reason": "fixture source"
+      },
+      "failure_behavior": {
+        "status": "known",
+        "value": "unknown action raises",
+        "reason": "fixture source"
+      }
+    }
+  ],
+  "corrections": [
+    {
+      "feature_ids": [
+        "s:tool"
+      ],
+      "reason": "split show/count actions; display is same show capability",
+      "evidence": [
+        "code"
+      ]
+    }
+  ],
+  "inspections": [
+    {
+      "id": "documentation",
+      "category": "documentation",
+      "outcome": "discovered",
+      "reason": "export declared in documentation",
+      "impact": "limited to inspected fixture",
+      "evidence": [
+        "doc"
+      ],
+      "feature_ids": [
+        "s:export"
+      ]
+    },
+    {
+      "id": "configuration",
+      "category": "configuration",
+      "outcome": "not-applicable",
+      "reason": "fixture has no deployment configuration or non-Python execution; runtime extension unresolved",
+      "impact": "limited to inspected fixture",
+      "evidence": [
+        "code"
+      ],
+      "feature_ids": []
+    },
+    {
+      "id": "dynamic-registration",
+      "category": "dynamic-registration",
+      "outcome": "unresolved",
+      "reason": "fixture has no deployment configuration or non-Python execution; runtime extension unresolved",
+      "impact": "extension capabilities remain unknown",
+      "evidence": [
+        "code"
+      ],
+      "feature_ids": []
+    },
+    {
+      "id": "multi-action",
+      "category": "multi-action",
+      "outcome": "inspected-no-addition",
+      "reason": "fixture has no deployment configuration or non-Python execution; runtime extension unresolved",
+      "impact": "limited to inspected fixture",
+      "evidence": [
+        "code"
+      ],
+      "feature_ids": []
+    },
+    {
+      "id": "non-python",
+      "category": "non-python",
+      "outcome": "not-applicable",
+      "reason": "fixture has no deployment configuration or non-Python execution; runtime extension unresolved",
+      "impact": "limited to inspected fixture",
+      "evidence": [
+        "code"
+      ],
+      "feature_ids": []
+    },
+    {
+      "id": "unmapped-paths",
+      "category": "unmapped-paths",
+      "outcome": "unresolved",
+      "reason": "fixture has no deployment configuration or non-Python execution; runtime extension unresolved",
+      "impact": "extension capabilities remain unknown",
+      "evidence": [
+        "code"
+      ],
+      "feature_ids": []
+    }
+  ]
+}

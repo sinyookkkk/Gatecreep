@@ -127,7 +127,7 @@ flowchart TD
 
 ### 数据与执行边界
 
-事实提取输出采用 `schema_version: 2`，包含 `capabilities`、`gates`、`flows`、`documents` 和 `coverage`。调用关系区分 `confirmed` 与 `inferred`；动态路径和解析缺口必须保留在分析中。脚本事实本身不构成“过度门禁”结论。
+事实提取输出采用 `schema_version: 3`，包含 `capabilities`、`gates`、`flows`、`documents` 和 `coverage`。调用关系区分 `confirmed` 与 `inferred`；动态路径和解析缺口必须保留在分析中。脚本事实本身不构成“过度门禁”结论。
 
 argparse 提取支持直接赋值的 `ArgumentParser`（包括导入别名）及直接声明的参数，并保留子命令参数；跨函数传递、动态构造等写法不保证完整解析。空 `coverage` 不代表完整覆盖，仍需结合源码复核。
 
@@ -141,3 +141,26 @@ JSON 使用 ASCII 转义，在目标目录外完成临时序列化后分块输�
 
 审计不导入或执行目标代码，不在目标项目内写入报告、缓存、配置或修复。报告完成后停止，修改目标项目属于用户确认后的独立任务。过度设计分析默认关闭，仅在明确请求时启用。
 
+
+### 源码快照和证据核验
+
+版本 3 事实新增 manifest 与 snapshot_id，摘要针对实际读取字节，支持非 Git 和未提交修改。版本 2 事实需重新提取，不能当作已绑定快照。manifest 记录读取、解析失败、跳过或读取失败；排除目录只记录剪枝目录，不枚举后代。
+
+新版报告附 evidence.json；交付前运行：
+`python -I gatecreep/scripts/check_report.py <report> --facts <facts.json> --evidence <evidence.json> --target <target>`。
+证据格式见报告模板。旧命令仍可检查格式，但不核验引用。引用通过不代表语义、运行行为或扫描完整性已获证明。文件变化须重新分析，历史失败不能自动归到当前代码。
+
+[工具恢复案例评估](docs/tool-recovery-evaluation.md) 使用合成源码和记录，不代表真实交易流程验证。新增回归命令：`python -I gatecreep/tests/check_evidence.py`。
+
+### 四阶段功能发现
+
+脚本扫描 → AI 沿线索阅读仓库总结功能 → AI 补查盲区 → 核对合并。每一步保存 JSON，分别为 01-scan.json、02-features.json、03-supplement.json、04-reconciliation.json，关联现有 evidence.json。脚本文件复用版本 3，其他三个采用 discovery_version 1。
+
+[字段契约](gatecreep/references/discovery-format.md) · [完整示例](docs/discovery-example/report.md)。所有输出放在目标之外，使用同一快照。每个入口候选都有处置记录，动态或跨语言缺口明确保留，不把函数数量当功能数量，也不把候选处置完整当功能覆盖完整。
+
+检查命令：
+```bash
+python -I gatecreep/scripts/check_discovery.py --scan <01-scan.json> --summary <02-features.json> --supplement <03-supplement.json> --final <04-reconciliation.json> --evidence <evidence.json> --target <目标> --report <报告>
+python -I gatecreep/tests/check_discovery.py
+```
+模型负责功能语义、合并拆分和证据充分性；程序检查结构、关联、候选处置及源码引用。报告交付前再验证快照，变化时重分析。旧格式检查仍可使用，但不代表新四阶段流程完成。

@@ -1,0 +1,8 @@
+{
+  "provenance": "synthetic; not a record of the real trading-agent incident",
+  "calls": [
+    {"payload": {"asof": "2026-10-29", "basis": "artifact:1", "basis_sha256": "digest"}},
+    {"payload": {"asof": "2026-10-29", "basis": "artifact:1", "basis_sha256": "digest", "authorization": {"continued": true}}}
+  ],
+  "expected_review": ["extra-field rejection is legitimate", "faulty recovery misclassifies parameter error", "repaired snapshot must not inherit historical finding", "actual agent behavior requires real runtime evidence"]
+}

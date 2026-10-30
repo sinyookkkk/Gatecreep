@@ -1,0 +1,93 @@
+{
+  "discovery_version": 1,
+  "stage": "features",
+  "snapshot_id": "5be58399d53f728b8d679f28b18ce8d630ad58e14abf6f98bd3074617e4d3d5c",
+  "features": [
+    {
+      "id": "s:tool",
+      "name": "tool",
+      "purpose": "tool",
+      "status": "confirmed",
+      "reason": "source reviewed; dynamic behavior not executed",
+      "candidate_ids": [
+        "tool.run"
+      ],
+      "evidence": [
+        "code"
+      ],
+      "inputs": {
+        "status": "known",
+        "value": "action and value",
+        "reason": "fixture source"
+      },
+      "outputs": {
+        "status": "known",
+        "value": "string or count",
+        "reason": "fixture source"
+      },
+      "success_criteria": {
+        "status": "known",
+        "value": "return selected result",
+        "reason": "fixture source"
+      },
+      "preconditions": {
+        "status": "known",
+        "value": "supported action",
+        "reason": "fixture source"
+      },
+      "side_effects": {
+        "status": "known",
+        "value": "none in shown actions",
+        "reason": "fixture source"
+      },
+      "failure_behavior": {
+        "status": "known",
+        "value": "unknown action raises",
+        "reason": "fixture source"
+      }
+    },
+    {
+      "id": "s:display",
+      "name": "display",
+      "purpose": "display",
+      "status": "confirmed",
+      "reason": "source reviewed; dynamic behavior not executed",
+      "candidate_ids": [
+        "tool.run"
+      ],
+      "evidence": [
+        "code"
+      ],
+      "inputs": {
+        "status": "known",
+        "value": "action and value",
+        "reason": "fixture source"
+      },
+      "outputs": {
+        "status": "known",
+        "value": "string or count",
+        "reason": "fixture source"
+      },
+      "success_criteria": {
+        "status": "known",
+        "value": "return selected result",
+        "reason": "fixture source"
+      },
+      "preconditions": {
+        "status": "known",
+        "value": "supported action",
+        "reason": "fixture source"
+      },
+      "side_effects": {
+        "status": "known",
+        "value": "none in shown actions",
+        "reason": "fixture source"
+      },
+      "failure_behavior": {
+        "status": "known",
+        "value": "unknown action raises",
+        "reason": "fixture source"
+      }
+    }
+  ]
+}

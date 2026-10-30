@@ -63,3 +63,16 @@
 - 每个代码事实必须有文件和行号；模型推断必须显式标记。
 - 报告只提供调整方向，不应用补丁、不修改目标项目、不宣称问题已修复。
 - 用户确认某项发现后，另行进入实现修改任务，不在本报告中自动展开无关重构。
+
+## 结构化证据契约
+
+报告旁 evidence.json 保存：snapshot_id（原样取事实）、citations、steps、links，后三者是列表。报告引用使用 `[evidence:c1]`。每个代码事实应有对应引用；人工复核其充分性，程序不推断文字语义。
+
+citation 示例：`{"id":"c1","path":"tool.py","start":1,"end":5,"fact_id":"可选已有事实ID"}`。路径相对目标根，禁止绝对路径、穿越和外部链接。
+step 示例：`{"id":"s1","claim":"校验拒绝多余字段","provenance":"static-fact","evidence":["c1"]}`。
+link 示例：`{"from":"s1","to":"s2","provenance":"inference","evidence":[]}`。
+provenance 仅 static-fact / supplied-runtime-record / inference；非推断必须关联引用。运行记录须在扫描范围内可引用，或明确作为未核验外部证据，不冒充静态事实。无发现可以为空步骤，但说明分析范围。分别描述引用有效性、静态判断、日志依据和未运行状态。
+
+## 功能发现关联
+
+功能范围来自 04-reconciliation.json；第二节每项最终功能使用 [feature:最终ID]。所有扫描缺口/未完成补查及未解决冲突，用 [scope:coverage:索引]、[scope:inspection:检查ID]、[scope:conflict:索引] 关联并说明影响。引用的功能 ID 必须存在，且每项最终功能都在报告出现。具体四阶段契约见 discovery-format.md。最终执行 check_discovery.py --report <报告>，同时保留原报告检查。

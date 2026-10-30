@@ -87,8 +87,8 @@ def project_check():
         assert list(Path(directory).iterdir()) == [target]
     facts = e.extract_project(Path(__file__).parents[1] / 'scripts')
     commands = [c for c in facts['capabilities'] if c['kind'] == 'cli-command']
-    assert {c['source']['path'] for c in commands} == {'extract_facts.py', 'check_report.py'}
-    assert len(commands) == 2
+    assert {c['source']['path'] for c in commands} == {'extract_facts.py', 'check_report.py', 'check_discovery.py'}
+    assert len(commands) == 3
     assert len({c['id'] for c in facts['capabilities']}) == len(facts['capabilities'])
 
 

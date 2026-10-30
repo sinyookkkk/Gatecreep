@@ -1,0 +1,411 @@
+{
+  "schema_version": 3,
+  "root": "E:\\workspace\\over-gate\\gatecreep\\tests\\fixtures\\discovery",
+  "manifest": [
+    {
+      "path": "README.md",
+      "status": "read",
+      "sha256": "1af2e1f02d3b69465cee84cd00a76d80d21ae6607c83fc5ec8a84dff442c5786",
+      "line_count": 3
+    },
+    {
+      "path": "tool.py",
+      "status": "read",
+      "sha256": "0d24d3d8633604b49e248d0a1ab2fac860c0771f9989e6b32f2cc7e0387dd340",
+      "line_count": 15
+    }
+  ],
+  "capabilities": [
+    {
+      "fact_type": "capability",
+      "id": "tool.format_result",
+      "kind": "python-function",
+      "name": "format_result",
+      "status": "candidate",
+      "source": {
+        "path": "tool.py",
+        "line": 4,
+        "column": 0
+      },
+      "inputs": [
+        {
+          "name": "value",
+          "annotation": null,
+          "default": null
+        }
+      ],
+      "returns": [
+        {
+          "value": "str(value)",
+          "line": 5
+        }
+      ],
+      "source_role": "unknown",
+      "direct_gate_ids": [
+        "tool.py:5:4:return"
+      ],
+      "reachable_gate_ids": [
+        "tool.py:5:4:return"
+      ]
+    },
+    {
+      "fact_type": "capability",
+      "id": "tool.run",
+      "kind": "python-function",
+      "name": "run",
+      "status": "candidate",
+      "source": {
+        "path": "tool.py",
+        "line": 7,
+        "column": 0
+      },
+      "inputs": [
+        {
+          "name": "action",
+          "annotation": null,
+          "default": null
+        },
+        {
+          "name": "value",
+          "annotation": null,
+          "default": null
+        }
+      ],
+      "returns": [
+        {
+          "value": "format_result(value)",
+          "line": 9
+        },
+        {
+          "value": "len(value)",
+          "line": 11
+        }
+      ],
+      "source_role": "unknown",
+      "direct_gate_ids": [
+        "tool.py:8:4:condition",
+        "tool.py:8:7:limit",
+        "tool.py:9:8:return",
+        "tool.py:10:4:condition",
+        "tool.py:10:7:limit",
+        "tool.py:11:8:return",
+        "tool.py:12:4:raise"
+      ],
+      "reachable_gate_ids": [
+        "tool.py:8:4:condition",
+        "tool.py:8:7:limit",
+        "tool.py:9:8:return",
+        "tool.py:10:4:condition",
+        "tool.py:10:7:limit",
+        "tool.py:11:8:return",
+        "tool.py:12:4:raise",
+        "tool.py:5:4:return"
+      ]
+    },
+    {
+      "fact_type": "capability",
+      "id": "tool.register",
+      "kind": "python-function",
+      "name": "register",
+      "status": "candidate",
+      "source": {
+        "path": "tool.py",
+        "line": 14,
+        "column": 0
+      },
+      "inputs": [
+        {
+          "name": "module_name",
+          "annotation": null,
+          "default": null
+        }
+      ],
+      "returns": [
+        {
+          "value": "importlib.import_module(module_name).tools",
+          "line": 15
+        }
+      ],
+      "source_role": "unknown",
+      "direct_gate_ids": [
+        "tool.py:15:4:return"
+      ],
+      "reachable_gate_ids": [
+        "tool.py:15:4:return"
+      ]
+    }
+  ],
+  "gates": [
+    {
+      "fact_type": "gate",
+      "id": "tool.py:5:4:return",
+      "kind": "return",
+      "action": "return",
+      "status": "confirmed",
+      "source": {
+        "path": "tool.py",
+        "line": 5,
+        "column": 4
+      },
+      "function": "tool.format_result",
+      "condition": null,
+      "has_alternative": false,
+      "early": false,
+      "value": "str(value)",
+      "source_role": "unknown",
+      "mapped_capability_ids": [
+        "tool.format_result",
+        "tool.run"
+      ]
+    },
+    {
+      "fact_type": "gate",
+      "id": "tool.py:8:4:condition",
+      "kind": "condition",
+      "action": "branch",
+      "status": "confirmed",
+      "source": {
+        "path": "tool.py",
+        "line": 8,
+        "column": 4
+      },
+      "function": "tool.run",
+      "condition": null,
+      "has_alternative": false,
+      "expression": "action == 'show'",
+      "alternative_present": false,
+      "source_role": "unknown",
+      "mapped_capability_ids": [
+        "tool.run"
+      ]
+    },
+    {
+      "fact_type": "gate",
+      "id": "tool.py:8:7:limit",
+      "kind": "limit",
+      "action": "compare",
+      "status": "confirmed",
+      "source": {
+        "path": "tool.py",
+        "line": 8,
+        "column": 7
+      },
+      "function": "tool.run",
+      "condition": null,
+      "has_alternative": false,
+      "operator": "Eq",
+      "left": "action",
+      "right": "'show'",
+      "value": "show",
+      "configuration": "literal",
+      "source_role": "unknown",
+      "mapped_capability_ids": [
+        "tool.run"
+      ]
+    },
+    {
+      "fact_type": "gate",
+      "id": "tool.py:9:8:return",
+      "kind": "return",
+      "action": "return",
+      "status": "confirmed",
+      "source": {
+        "path": "tool.py",
+        "line": 9,
+        "column": 8
+      },
+      "function": "tool.run",
+      "condition": "action == 'show'",
+      "has_alternative": false,
+      "early": true,
+      "value": "format_result(value)",
+      "source_role": "unknown",
+      "mapped_capability_ids": [
+        "tool.run"
+      ]
+    },
+    {
+      "fact_type": "gate",
+      "id": "tool.py:10:4:condition",
+      "kind": "condition",
+      "action": "branch",
+      "status": "confirmed",
+      "source": {
+        "path": "tool.py",
+        "line": 10,
+        "column": 4
+      },
+      "function": "tool.run",
+      "condition": null,
+      "has_alternative": false,
+      "expression": "action == 'count'",
+      "alternative_present": false,
+      "source_role": "unknown",
+      "mapped_capability_ids": [
+        "tool.run"
+      ]
+    },
+    {
+      "fact_type": "gate",
+      "id": "tool.py:10:7:limit",
+      "kind": "limit",
+      "action": "compare",
+      "status": "confirmed",
+      "source": {
+        "path": "tool.py",
+        "line": 10,
+        "column": 7
+      },
+      "function": "tool.run",
+      "condition": null,
+      "has_alternative": false,
+      "operator": "Eq",
+      "left": "action",
+      "right": "'count'",
+      "value": "count",
+      "configuration": "literal",
+      "source_role": "unknown",
+      "mapped_capability_ids": [
+        "tool.run"
+      ]
+    },
+    {
+      "fact_type": "gate",
+      "id": "tool.py:11:8:return",
+      "kind": "return",
+      "action": "return",
+      "status": "confirmed",
+      "source": {
+        "path": "tool.py",
+        "line": 11,
+        "column": 8
+      },
+      "function": "tool.run",
+      "condition": "action == 'count'",
+      "has_alternative": false,
+      "early": true,
+      "value": "len(value)",
+      "source_role": "unknown",
+      "mapped_capability_ids": [
+        "tool.run"
+      ]
+    },
+    {
+      "fact_type": "gate",
+      "id": "tool.py:12:4:raise",
+      "kind": "raise",
+      "action": "reject",
+      "status": "confirmed",
+      "source": {
+        "path": "tool.py",
+        "line": 12,
+        "column": 4
+      },
+      "function": "tool.run",
+      "condition": null,
+      "has_alternative": false,
+      "exception": "ValueError('unknown action')",
+      "source_role": "unknown",
+      "mapped_capability_ids": [
+        "tool.run"
+      ]
+    },
+    {
+      "fact_type": "gate",
+      "id": "tool.py:15:4:return",
+      "kind": "return",
+      "action": "return",
+      "status": "confirmed",
+      "source": {
+        "path": "tool.py",
+        "line": 15,
+        "column": 4
+      },
+      "function": "tool.register",
+      "condition": null,
+      "has_alternative": false,
+      "early": false,
+      "value": "importlib.import_module(module_name).tools",
+      "source_role": "unknown",
+      "mapped_capability_ids": [
+        "tool.register"
+      ]
+    }
+  ],
+  "flows": [
+    {
+      "fact_type": "flow",
+      "caller": "tool.format_result",
+      "callee": "str",
+      "resolved": null,
+      "status": "inferred",
+      "source": {
+        "path": "tool.py",
+        "line": 5,
+        "column": 11
+      },
+      "source_role": "unknown"
+    },
+    {
+      "fact_type": "flow",
+      "caller": "tool.run",
+      "callee": "format_result",
+      "resolved": "tool.format_result",
+      "status": "confirmed",
+      "source": {
+        "path": "tool.py",
+        "line": 9,
+        "column": 15
+      },
+      "source_role": "unknown"
+    },
+    {
+      "fact_type": "flow",
+      "caller": "tool.run",
+      "callee": "len",
+      "resolved": null,
+      "status": "inferred",
+      "source": {
+        "path": "tool.py",
+        "line": 11,
+        "column": 15
+      },
+      "source_role": "unknown"
+    },
+    {
+      "fact_type": "flow",
+      "caller": "tool.run",
+      "callee": "ValueError",
+      "resolved": null,
+      "status": "inferred",
+      "source": {
+        "path": "tool.py",
+        "line": 12,
+        "column": 10
+      },
+      "source_role": "unknown"
+    },
+    {
+      "fact_type": "flow",
+      "caller": "tool.register",
+      "callee": "importlib.import_module",
+      "resolved": null,
+      "status": "inferred",
+      "source": {
+        "path": "tool.py",
+        "line": 15,
+        "column": 11
+      },
+      "source_role": "unknown"
+    }
+  ],
+  "documents": [
+    {
+      "fact_type": "document",
+      "path": "README.md",
+      "kind": "markdown"
+    }
+  ],
+  "coverage": [],
+  "snapshot_id": "5be58399d53f728b8d679f28b18ce8d630ad58e14abf6f98bd3074617e4d3d5c"
+}

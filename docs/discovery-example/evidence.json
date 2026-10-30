@@ -1,0 +1,19 @@
+{
+  "snapshot_id": "5be58399d53f728b8d679f28b18ce8d630ad58e14abf6f98bd3074617e4d3d5c",
+  "citations": [
+    {
+      "id": "code",
+      "path": "tool.py",
+      "start": 1,
+      "end": 15
+    },
+    {
+      "id": "doc",
+      "path": "README.md",
+      "start": 1,
+      "end": 3
+    }
+  ],
+  "steps": [],
+  "links": []
+}

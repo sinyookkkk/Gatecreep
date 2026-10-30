@@ -24,7 +24,7 @@ description: Use when auditing Python Agent, CLI, or Skill projects for blocked 
 先阅读 [审计方法](references/audit-method.md) 和 [报告格式](references/report-format.md)，再按顺序完成：
 
 1. **范围与事实**：确认路径和范围。运行辅助脚本并保存 stdout，非零退出或部分失败必须记为覆盖缺口。
-2. **功能清单**：合并声明文档与实现入口，覆盖全部可识别公开功能；用全局门禁反向补漏。
+2. **四阶段功能发现**：脚本保存 01-scan.json；模型据此阅读仓库保存 02-features.json，再补查盲区保存 03-supplement.json，最后核对候选处置与最终功能保存 04-reconciliation.json。遵循 references/discovery-format.md，复用 evidence.json；运行 check_discovery.py，结构、关联与引用通过后再进入任务分析。
 3. **任务分析**：逐项先写合法任务与成功标准，再生成有契约依据的失败场景。
 4. **因果与评估**：建立静态因果链，分别分类失败来源和表现；只对门禁应用证据分档。
 5. **人工报告**：严格按模板输出范围、功能、发现、反证、不确定性和待复核项；写入报告文件后运行格式检查，修正所有错误再交付。
@@ -40,7 +40,7 @@ python -I <skill-dir>/scripts/check_report.py <report>
 
 ## Completion Gates
 
-- 功能清单和覆盖缺口均存在，才能开始功能分析。
+- 四阶段 JSON、候选逐项处置、最终功能证据和全部覆盖影响均存在且检查通过，才能开始门禁任务分析；未知项保留并说明影响。
 - 合法任务与成功标准明确，才能生成失败场景。
 - 因果链和反证检查完整，才能形成主要发现。
 - 报告完成即停止；修改目标项目是用户确认后的独立任务。
@@ -57,9 +57,9 @@ python -I <skill-dir>/scripts/check_report.py <report>
 | 顺手审查无关实现质量 | 仅记录与任务失败因果链有关的非门禁原因 |
 
 
-### Facts schema version 2
+### Facts schema version 3
 
-提取输出使用 `schema_version: 2`。JSON 原生标量、列表和字符串键字典保持原有形态。
+提取输出使用 `schema_version: 3`。JSON 原生标量、列表和字符串键字典保持原有形态。
 非 JSON 字面量用 `literal_type`、`expression`（所属字面量表达式）以及 `items` 或 `representation` 表示：
 set/frozenset/tuple 的 items 是列表，集合按规范 JSON 文本排序；非字符串键字典的 items 是键值对列表；
 bytes/complex/Ellipsis/非有限浮点值使用 Python repr 文本。消费者应按版本解释这些字段，不能将类型记录当作普通业务字典。
@@ -80,3 +80,17 @@ capabilities、gates、flows 的 `source_role` 为路径启发式：目录段 `t
 
 回归检查：`python -I <skill-dir>/tests/check_extract_facts.py`，含本仓库 CLI 扫描、严格 JSON 解析和 ID 唯一性检查。
 另运行 `tests/check_audit_regressions.py` 和 `tests/check_scan_reliability.py`，检查 CLI 参数、多行报告、目录边界、输出失败和 MCP 声明。
+
+### 快照与证据交付
+
+新版事实附 manifest（path/status/sha256/line_count）和 snapshot_id。摘要标识实际读取字节，Git 版本不是替代。版本 2 无快照，必须重新提取才能核验引用。
+
+每份新报告同时保存 evidence.json，遵循 references/report-format.md 的证据契约。运行：
+`python -I <skill-dir>/scripts/check_report.py <report> --facts <facts.json> --evidence <evidence.json> --target <target>`。
+核验失败必须修正；内容变化需重新分析相关结论。所有输出在目标外。旧版无参数调用仅检查格式，不满足新交付要求。
+
+### 功能发现交付
+
+阅读 references/discovery-format.md。模型总结依赖脚本线索，不是独立交叉验证。补查文档、配置、动态注册、多动作、非 Python 与未解析路径，不能把未检查写成无新增。最终报告使用 [feature:ID] 与 [scope:来源]，以核对后的最终清单为功能范围。快照变化后重新提取并更新受影响分析，不能只替换 snapshot_id。
+
+进入门禁分析前运行 check_discovery.py 的四文件/证据/目标参数；报告完成时加 --report 再检查。文件全部在目标外。结构和引用有效不等于语义正确或功能覆盖完整；报告-only 旧命令不满足新流程。

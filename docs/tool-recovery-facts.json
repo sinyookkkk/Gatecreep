@@ -1,0 +1,662 @@
+{
+  "schema_version": 3,
+  "root": "E:\\workspace\\over-gate\\gatecreep\\tests\\fixtures\\tool-recovery",
+  "manifest": [
+    {
+      "path": "calls.json",
+      "status": "read",
+      "sha256": "83d2a56c00747e26a8f00378aceca0c580bd602c52d701175ca404db61b26751",
+      "line_count": 8
+    },
+    {
+      "path": "faulty.py",
+      "status": "read",
+      "sha256": "637ff431f186394d69796191480204d262bb48bdff12c9182f1ef0f1ae7d4a2b",
+      "line_count": 20
+    },
+    {
+      "path": "repaired.py",
+      "status": "read",
+      "sha256": "5a90d8703c9380e05f914738e969718e9b2e7416aa2891bf2567d1da3c82645a",
+      "line_count": 23
+    }
+  ],
+  "capabilities": [
+    {
+      "fact_type": "capability",
+      "id": "faulty.prepare",
+      "kind": "python-function",
+      "name": "prepare",
+      "status": "candidate",
+      "source": {
+        "path": "faulty.py",
+        "line": 6,
+        "column": 0
+      },
+      "inputs": [],
+      "returns": [
+        {
+          "value": "{'basis': 'artifact:1', 'basis_sha256': 'digest', 'continuation': True}",
+          "line": 7
+        }
+      ],
+      "source_role": "unknown",
+      "direct_gate_ids": [
+        "faulty.py:7:4:return"
+      ],
+      "reachable_gate_ids": [
+        "faulty.py:7:4:return"
+      ]
+    },
+    {
+      "fact_type": "capability",
+      "id": "faulty.approve",
+      "kind": "python-function",
+      "name": "approve",
+      "status": "candidate",
+      "source": {
+        "path": "faulty.py",
+        "line": 10,
+        "column": 0
+      },
+      "inputs": [
+        {
+          "name": "payload",
+          "annotation": null,
+          "default": null
+        }
+      ],
+      "returns": [
+        {
+          "value": "{'authorization_mode': 'continued'}",
+          "line": 13
+        }
+      ],
+      "source_role": "unknown",
+      "direct_gate_ids": [
+        "faulty.py:11:4:condition",
+        "faulty.py:12:8:raise",
+        "faulty.py:13:4:return"
+      ],
+      "reachable_gate_ids": [
+        "faulty.py:11:4:condition",
+        "faulty.py:12:8:raise",
+        "faulty.py:13:4:return"
+      ]
+    },
+    {
+      "fact_type": "capability",
+      "id": "faulty.call",
+      "kind": "python-function",
+      "name": "call",
+      "status": "candidate",
+      "source": {
+        "path": "faulty.py",
+        "line": 16,
+        "column": 0
+      },
+      "inputs": [
+        {
+          "name": "payload",
+          "annotation": null,
+          "default": null
+        }
+      ],
+      "returns": [
+        {
+          "value": "approve(payload)",
+          "line": 18
+        },
+        {
+          "value": "{'error': 'Ask user for authorization'}",
+          "line": 20
+        }
+      ],
+      "source_role": "unknown",
+      "direct_gate_ids": [
+        "faulty.py:18:8:return",
+        "faulty.py:19:4:exception-handler",
+        "faulty.py:20:8:return"
+      ],
+      "reachable_gate_ids": [
+        "faulty.py:18:8:return",
+        "faulty.py:19:4:exception-handler",
+        "faulty.py:20:8:return",
+        "faulty.py:11:4:condition",
+        "faulty.py:12:8:raise",
+        "faulty.py:13:4:return"
+      ]
+    },
+    {
+      "fact_type": "capability",
+      "id": "repaired.prepare",
+      "kind": "python-function",
+      "name": "prepare",
+      "status": "candidate",
+      "source": {
+        "path": "repaired.py",
+        "line": 8,
+        "column": 0
+      },
+      "inputs": [],
+      "returns": [
+        {
+          "value": "{'basis': 'artifact:1', 'basis_sha256': 'digest', 'continuation': True}",
+          "line": 9
+        }
+      ],
+      "source_role": "unknown",
+      "direct_gate_ids": [
+        "repaired.py:9:4:return"
+      ],
+      "reachable_gate_ids": [
+        "repaired.py:9:4:return"
+      ]
+    },
+    {
+      "fact_type": "capability",
+      "id": "repaired.approve",
+      "kind": "python-function",
+      "name": "approve",
+      "status": "candidate",
+      "source": {
+        "path": "repaired.py",
+        "line": 12,
+        "column": 0
+      },
+      "inputs": [
+        {
+          "name": "payload",
+          "annotation": null,
+          "default": null
+        }
+      ],
+      "returns": [
+        {
+          "value": "{'authorization_mode': 'continued'}",
+          "line": 16
+        }
+      ],
+      "source_role": "unknown",
+      "direct_gate_ids": [
+        "repaired.py:14:4:condition",
+        "repaired.py:15:8:raise",
+        "repaired.py:16:4:return"
+      ],
+      "reachable_gate_ids": [
+        "repaired.py:14:4:condition",
+        "repaired.py:15:8:raise",
+        "repaired.py:16:4:return"
+      ]
+    },
+    {
+      "fact_type": "capability",
+      "id": "repaired.call",
+      "kind": "python-function",
+      "name": "call",
+      "status": "candidate",
+      "source": {
+        "path": "repaired.py",
+        "line": 19,
+        "column": 0
+      },
+      "inputs": [
+        {
+          "name": "payload",
+          "annotation": null,
+          "default": null
+        }
+      ],
+      "returns": [
+        {
+          "value": "approve(payload)",
+          "line": 21
+        },
+        {
+          "value": "{'error': str(exc), 'hint': 'Correct fields; omit authorization when continuation is available'}",
+          "line": 23
+        }
+      ],
+      "source_role": "unknown",
+      "direct_gate_ids": [
+        "repaired.py:21:8:return",
+        "repaired.py:22:4:exception-handler",
+        "repaired.py:23:8:return"
+      ],
+      "reachable_gate_ids": [
+        "repaired.py:21:8:return",
+        "repaired.py:22:4:exception-handler",
+        "repaired.py:23:8:return",
+        "repaired.py:14:4:condition",
+        "repaired.py:15:8:raise",
+        "repaired.py:16:4:return"
+      ]
+    }
+  ],
+  "gates": [
+    {
+      "fact_type": "gate",
+      "id": "faulty.py:7:4:return",
+      "kind": "return",
+      "action": "return",
+      "status": "confirmed",
+      "source": {
+        "path": "faulty.py",
+        "line": 7,
+        "column": 4
+      },
+      "function": "faulty.prepare",
+      "condition": null,
+      "has_alternative": false,
+      "early": false,
+      "value": "{'basis': 'artifact:1', 'basis_sha256': 'digest', 'continuation': True}",
+      "source_role": "unknown",
+      "mapped_capability_ids": [
+        "faulty.prepare"
+      ]
+    },
+    {
+      "fact_type": "gate",
+      "id": "faulty.py:11:4:condition",
+      "kind": "condition",
+      "action": "branch",
+      "status": "confirmed",
+      "source": {
+        "path": "faulty.py",
+        "line": 11,
+        "column": 4
+      },
+      "function": "faulty.approve",
+      "condition": null,
+      "has_alternative": false,
+      "expression": "set(payload) - {'asof', 'basis', 'authorization'}",
+      "alternative_present": false,
+      "source_role": "unknown",
+      "mapped_capability_ids": [
+        "faulty.approve",
+        "faulty.call"
+      ]
+    },
+    {
+      "fact_type": "gate",
+      "id": "faulty.py:12:8:raise",
+      "kind": "raise",
+      "action": "reject",
+      "status": "confirmed",
+      "source": {
+        "path": "faulty.py",
+        "line": 12,
+        "column": 8
+      },
+      "function": "faulty.approve",
+      "condition": "set(payload) - {'asof', 'basis', 'authorization'}",
+      "has_alternative": false,
+      "exception": "ValueError('Explicit authorization required')",
+      "source_role": "unknown",
+      "mapped_capability_ids": [
+        "faulty.approve",
+        "faulty.call"
+      ]
+    },
+    {
+      "fact_type": "gate",
+      "id": "faulty.py:13:4:return",
+      "kind": "return",
+      "action": "return",
+      "status": "confirmed",
+      "source": {
+        "path": "faulty.py",
+        "line": 13,
+        "column": 4
+      },
+      "function": "faulty.approve",
+      "condition": null,
+      "has_alternative": false,
+      "early": false,
+      "value": "{'authorization_mode': 'continued'}",
+      "source_role": "unknown",
+      "mapped_capability_ids": [
+        "faulty.approve",
+        "faulty.call"
+      ]
+    },
+    {
+      "fact_type": "gate",
+      "id": "faulty.py:18:8:return",
+      "kind": "return",
+      "action": "return",
+      "status": "confirmed",
+      "source": {
+        "path": "faulty.py",
+        "line": 18,
+        "column": 8
+      },
+      "function": "faulty.call",
+      "condition": null,
+      "has_alternative": false,
+      "early": true,
+      "value": "approve(payload)",
+      "source_role": "unknown",
+      "mapped_capability_ids": [
+        "faulty.call"
+      ]
+    },
+    {
+      "fact_type": "gate",
+      "id": "faulty.py:19:4:exception-handler",
+      "kind": "exception-handler",
+      "action": "handle",
+      "status": "confirmed",
+      "source": {
+        "path": "faulty.py",
+        "line": 19,
+        "column": 4
+      },
+      "function": "faulty.call",
+      "condition": null,
+      "has_alternative": false,
+      "exception": "ValueError",
+      "source_role": "unknown",
+      "mapped_capability_ids": [
+        "faulty.call"
+      ]
+    },
+    {
+      "fact_type": "gate",
+      "id": "faulty.py:20:8:return",
+      "kind": "return",
+      "action": "return",
+      "status": "confirmed",
+      "source": {
+        "path": "faulty.py",
+        "line": 20,
+        "column": 8
+      },
+      "function": "faulty.call",
+      "condition": null,
+      "has_alternative": false,
+      "early": true,
+      "value": "{'error': 'Ask user for authorization'}",
+      "source_role": "unknown",
+      "mapped_capability_ids": [
+        "faulty.call"
+      ]
+    },
+    {
+      "fact_type": "gate",
+      "id": "repaired.py:9:4:return",
+      "kind": "return",
+      "action": "return",
+      "status": "confirmed",
+      "source": {
+        "path": "repaired.py",
+        "line": 9,
+        "column": 4
+      },
+      "function": "repaired.prepare",
+      "condition": null,
+      "has_alternative": false,
+      "early": false,
+      "value": "{'basis': 'artifact:1', 'basis_sha256': 'digest', 'continuation': True}",
+      "source_role": "unknown",
+      "mapped_capability_ids": [
+        "repaired.prepare"
+      ]
+    },
+    {
+      "fact_type": "gate",
+      "id": "repaired.py:14:4:condition",
+      "kind": "condition",
+      "action": "branch",
+      "status": "confirmed",
+      "source": {
+        "path": "repaired.py",
+        "line": 14,
+        "column": 4
+      },
+      "function": "repaired.approve",
+      "condition": null,
+      "has_alternative": false,
+      "expression": "extra",
+      "alternative_present": false,
+      "source_role": "unknown",
+      "mapped_capability_ids": [
+        "repaired.approve",
+        "repaired.call"
+      ]
+    },
+    {
+      "fact_type": "gate",
+      "id": "repaired.py:15:8:raise",
+      "kind": "raise",
+      "action": "reject",
+      "status": "confirmed",
+      "source": {
+        "path": "repaired.py",
+        "line": 15,
+        "column": 8
+      },
+      "function": "repaired.approve",
+      "condition": "extra",
+      "has_alternative": false,
+      "exception": "ValueError('Unexpected fields: ' + ', '.join(sorted(extra)))",
+      "source_role": "unknown",
+      "mapped_capability_ids": [
+        "repaired.approve",
+        "repaired.call"
+      ]
+    },
+    {
+      "fact_type": "gate",
+      "id": "repaired.py:16:4:return",
+      "kind": "return",
+      "action": "return",
+      "status": "confirmed",
+      "source": {
+        "path": "repaired.py",
+        "line": 16,
+        "column": 4
+      },
+      "function": "repaired.approve",
+      "condition": null,
+      "has_alternative": false,
+      "early": false,
+      "value": "{'authorization_mode': 'continued'}",
+      "source_role": "unknown",
+      "mapped_capability_ids": [
+        "repaired.approve",
+        "repaired.call"
+      ]
+    },
+    {
+      "fact_type": "gate",
+      "id": "repaired.py:21:8:return",
+      "kind": "return",
+      "action": "return",
+      "status": "confirmed",
+      "source": {
+        "path": "repaired.py",
+        "line": 21,
+        "column": 8
+      },
+      "function": "repaired.call",
+      "condition": null,
+      "has_alternative": false,
+      "early": true,
+      "value": "approve(payload)",
+      "source_role": "unknown",
+      "mapped_capability_ids": [
+        "repaired.call"
+      ]
+    },
+    {
+      "fact_type": "gate",
+      "id": "repaired.py:22:4:exception-handler",
+      "kind": "exception-handler",
+      "action": "handle",
+      "status": "confirmed",
+      "source": {
+        "path": "repaired.py",
+        "line": 22,
+        "column": 4
+      },
+      "function": "repaired.call",
+      "condition": null,
+      "has_alternative": false,
+      "exception": "ValueError",
+      "source_role": "unknown",
+      "mapped_capability_ids": [
+        "repaired.call"
+      ]
+    },
+    {
+      "fact_type": "gate",
+      "id": "repaired.py:23:8:return",
+      "kind": "return",
+      "action": "return",
+      "status": "confirmed",
+      "source": {
+        "path": "repaired.py",
+        "line": 23,
+        "column": 8
+      },
+      "function": "repaired.call",
+      "condition": null,
+      "has_alternative": false,
+      "early": true,
+      "value": "{'error': str(exc), 'hint': 'Correct fields; omit authorization when continuation is available'}",
+      "source_role": "unknown",
+      "mapped_capability_ids": [
+        "repaired.call"
+      ]
+    }
+  ],
+  "flows": [
+    {
+      "fact_type": "flow",
+      "caller": "faulty.approve",
+      "callee": "set",
+      "resolved": null,
+      "status": "inferred",
+      "source": {
+        "path": "faulty.py",
+        "line": 11,
+        "column": 7
+      },
+      "source_role": "unknown"
+    },
+    {
+      "fact_type": "flow",
+      "caller": "faulty.approve",
+      "callee": "ValueError",
+      "resolved": null,
+      "status": "inferred",
+      "source": {
+        "path": "faulty.py",
+        "line": 12,
+        "column": 14
+      },
+      "source_role": "unknown"
+    },
+    {
+      "fact_type": "flow",
+      "caller": "faulty.call",
+      "callee": "approve",
+      "resolved": "faulty.approve",
+      "status": "confirmed",
+      "source": {
+        "path": "faulty.py",
+        "line": 18,
+        "column": 15
+      },
+      "source_role": "unknown"
+    },
+    {
+      "fact_type": "flow",
+      "caller": "repaired.approve",
+      "callee": "set",
+      "resolved": null,
+      "status": "inferred",
+      "source": {
+        "path": "repaired.py",
+        "line": 13,
+        "column": 12
+      },
+      "source_role": "unknown"
+    },
+    {
+      "fact_type": "flow",
+      "caller": "repaired.approve",
+      "callee": "ValueError",
+      "resolved": null,
+      "status": "inferred",
+      "source": {
+        "path": "repaired.py",
+        "line": 15,
+        "column": 14
+      },
+      "source_role": "unknown"
+    },
+    {
+      "fact_type": "flow",
+      "caller": "repaired.approve",
+      "callee": "', '.join",
+      "resolved": null,
+      "status": "inferred",
+      "source": {
+        "path": "repaired.py",
+        "line": 15,
+        "column": 49
+      },
+      "source_role": "unknown"
+    },
+    {
+      "fact_type": "flow",
+      "caller": "repaired.approve",
+      "callee": "sorted",
+      "resolved": null,
+      "status": "inferred",
+      "source": {
+        "path": "repaired.py",
+        "line": 15,
+        "column": 59
+      },
+      "source_role": "unknown"
+    },
+    {
+      "fact_type": "flow",
+      "caller": "repaired.call",
+      "callee": "approve",
+      "resolved": "repaired.approve",
+      "status": "confirmed",
+      "source": {
+        "path": "repaired.py",
+        "line": 21,
+        "column": 15
+      },
+      "source_role": "unknown"
+    },
+    {
+      "fact_type": "flow",
+      "caller": "repaired.call",
+      "callee": "str",
+      "resolved": null,
+      "status": "inferred",
+      "source": {
+        "path": "repaired.py",
+        "line": 23,
+        "column": 25
+      },
+      "source_role": "unknown"
+    }
+  ],
+  "documents": [
+    {
+      "fact_type": "document",
+      "path": "calls.json",
+      "kind": "json"
+    }
+  ],
+  "coverage": [],
+  "snapshot_id": "9fd1d7bb404d6b702fe1b5721a525446412966ec6435c8965c4592e65d44395b"
+}

@@ -5,6 +5,8 @@ from __future__ import annotations
 import argparse
 import ast
 import json
+import hashlib
+import io
 import math
 import os
 import stat
@@ -14,7 +16,7 @@ import tokenize
 from pathlib import Path
 
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 SKIP_DIRS = {".git", "__pycache__", ".venv", "venv", "node_modules", ".uv-cache"}
 DOCUMENT_KINDS = {
     ".md": "markdown",
@@ -464,10 +466,11 @@ class PythonFacts(ast.NodeVisitor):
             self.visit(node.value)
 
 
-def parse_python(path: Path, relative: Path) -> tuple[list[dict], list[dict], list[dict], list[dict]]:
+def parse_python(path: Path, relative: Path, data: bytes | None = None) -> tuple[list[dict], list[dict], list[dict], list[dict]]:
     try:
-        with tokenize.open(path) as handle:
-            tree = ast.parse(handle.read(), filename=str(path))
+        data = path.read_bytes() if data is None else data
+        encoding, _ = tokenize.detect_encoding(io.BytesIO(data).readline)
+        tree = ast.parse(data.decode(encoding), filename=str(path))
     except (SyntaxError, UnicodeError) as exc:
         return [], [], [], [{
             "fact_type": "coverage",
@@ -566,6 +569,7 @@ def extract_project(root: Path) -> dict:
     facts = {
         "schema_version": SCHEMA_VERSION,
         "root": str(root),
+        "manifest": [],
         "capabilities": [],
         "gates": [],
         "flows": [],
@@ -573,6 +577,7 @@ def extract_project(root: Path) -> dict:
         "coverage": [],
     }
     def gap(path, kind, message):
+        facts["manifest"].append({"path": Path(path).relative_to(root).as_posix(), "status": "failed" if kind.startswith("unreadable") else "skipped", "reason": message})
         facts["coverage"].append({
             "fact_type": "coverage", "kind": kind, "status": "confirmed",
             "source": source_ref(Path(path).relative_to(root).as_posix(), ast.Pass()),
@@ -613,19 +618,29 @@ def extract_project(root: Path) -> dict:
                 if not path.resolve().is_relative_to(root):
                     gap(path, "excluded-file", "file link resolves outside target")
                     continue
+                if path.suffix not in DOCUMENT_KINDS and path.suffix != ".py":
+                    facts["manifest"].append({"path": relative.as_posix(), "status": "skipped", "reason": "unsupported file type"})
+                    continue
+                data = path.read_bytes()
+                entry = {"path": relative.as_posix(), "status": "read", "sha256": hashlib.sha256(data).hexdigest(), "line_count": len(data.splitlines())}
+                facts["manifest"].append(entry)
                 if path.suffix in DOCUMENT_KINDS:
                     facts["documents"].append({
                         "fact_type": "document", "path": relative.as_posix(),
                         "kind": DOCUMENT_KINDS[path.suffix],
                     })
                 elif path.suffix == ".py":
-                    capabilities, gates, flows, coverage = parse_python(path, relative)
+                    capabilities, gates, flows, coverage = parse_python(path, relative, data)
+                    if coverage:
+                        entry["status"] = "parse-error"
                     facts["capabilities"].extend(capabilities)
                     facts["gates"].extend(gates)
                     facts["flows"].extend(flows)
                     facts["coverage"].extend(coverage)
             except OSError as exc:
                 gap(path, "unreadable-file", str(exc))
+    facts["manifest"].sort(key=lambda item: item["path"])
+    facts["snapshot_id"] = hashlib.sha256(json.dumps(facts["manifest"], sort_keys=True, ensure_ascii=True).encode()).hexdigest()
     link_facts(facts)
     return facts
 

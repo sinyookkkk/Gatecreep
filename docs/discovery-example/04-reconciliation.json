@@ -1,0 +1,245 @@
+{
+  "discovery_version": 1,
+  "stage": "reconciliation",
+  "snapshot_id": "5be58399d53f728b8d679f28b18ce8d630ad58e14abf6f98bd3074617e4d3d5c",
+  "features": [
+    {
+      "id": "f:show",
+      "name": "show",
+      "purpose": "show",
+      "status": "confirmed",
+      "reason": "source reviewed; dynamic behavior not executed",
+      "candidate_ids": [
+        "tool.run"
+      ],
+      "evidence": [
+        "code"
+      ],
+      "inputs": {
+        "status": "known",
+        "value": "action and value",
+        "reason": "fixture source"
+      },
+      "outputs": {
+        "status": "known",
+        "value": "string or count",
+        "reason": "fixture source"
+      },
+      "success_criteria": {
+        "status": "known",
+        "value": "return selected result",
+        "reason": "fixture source"
+      },
+      "preconditions": {
+        "status": "known",
+        "value": "supported action",
+        "reason": "fixture source"
+      },
+      "side_effects": {
+        "status": "known",
+        "value": "none in shown actions",
+        "reason": "fixture source"
+      },
+      "failure_behavior": {
+        "status": "known",
+        "value": "unknown action raises",
+        "reason": "fixture source"
+      },
+      "source_feature_ids": [
+        "s:tool",
+        "s:display"
+      ]
+    },
+    {
+      "id": "f:count",
+      "name": "count",
+      "purpose": "count",
+      "status": "confirmed",
+      "reason": "source reviewed; dynamic behavior not executed",
+      "candidate_ids": [
+        "tool.run"
+      ],
+      "evidence": [
+        "code"
+      ],
+      "inputs": {
+        "status": "known",
+        "value": "action and value",
+        "reason": "fixture source"
+      },
+      "outputs": {
+        "status": "known",
+        "value": "string or count",
+        "reason": "fixture source"
+      },
+      "success_criteria": {
+        "status": "known",
+        "value": "return selected result",
+        "reason": "fixture source"
+      },
+      "preconditions": {
+        "status": "known",
+        "value": "supported action",
+        "reason": "fixture source"
+      },
+      "side_effects": {
+        "status": "known",
+        "value": "none in shown actions",
+        "reason": "fixture source"
+      },
+      "failure_behavior": {
+        "status": "known",
+        "value": "unknown action raises",
+        "reason": "fixture source"
+      },
+      "source_feature_ids": [
+        "s:tool"
+      ]
+    },
+    {
+      "id": "f:export",
+      "name": "export",
+      "purpose": "export",
+      "status": "unknown",
+      "reason": "source reviewed; dynamic behavior not executed",
+      "candidate_ids": [],
+      "evidence": [
+        "doc"
+      ],
+      "inputs": {
+        "status": "known",
+        "value": "action and value",
+        "reason": "fixture source"
+      },
+      "outputs": {
+        "status": "unknown",
+        "value": null,
+        "reason": "implementation absent from inspected dispatch"
+      },
+      "success_criteria": {
+        "status": "known",
+        "value": "return selected result",
+        "reason": "fixture source"
+      },
+      "preconditions": {
+        "status": "known",
+        "value": "supported action",
+        "reason": "fixture source"
+      },
+      "side_effects": {
+        "status": "known",
+        "value": "none in shown actions",
+        "reason": "fixture source"
+      },
+      "failure_behavior": {
+        "status": "known",
+        "value": "unknown action raises",
+        "reason": "fixture source"
+      },
+      "source_feature_ids": [
+        "s:export"
+      ]
+    }
+  ],
+  "candidate_dispositions": [
+    {
+      "candidate_id": "tool.format_result",
+      "classification": "internal",
+      "feature_ids": [],
+      "reason": "called formatting helper",
+      "evidence": [
+        "code"
+      ]
+    },
+    {
+      "candidate_id": "tool.run",
+      "classification": "public-entry",
+      "feature_ids": [
+        "f:show",
+        "f:count"
+      ],
+      "reason": "dispatcher",
+      "evidence": [
+        "code"
+      ]
+    },
+    {
+      "candidate_id": "tool.register",
+      "classification": "unresolved",
+      "feature_ids": [],
+      "reason": "runtime module cannot be resolved",
+      "evidence": [
+        "code"
+      ]
+    }
+  ],
+  "transformations": [
+    {
+      "kind": "split",
+      "source_ids": [
+        "s:tool"
+      ],
+      "target_ids": [
+        "f:show",
+        "f:count"
+      ],
+      "reason": "action branches",
+      "evidence": [
+        "code"
+      ]
+    },
+    {
+      "kind": "merge",
+      "source_ids": [
+        "s:tool",
+        "s:display"
+      ],
+      "target_ids": [
+        "f:show"
+      ],
+      "reason": "display and show same action",
+      "evidence": [
+        "code"
+      ]
+    },
+    {
+      "kind": "retain",
+      "source_ids": [
+        "s:export"
+      ],
+      "target_ids": [
+        "f:export"
+      ],
+      "reason": "preserve documented unknown capability",
+      "evidence": [
+        "doc"
+      ]
+    }
+  ],
+  "conflicts": [
+    {
+      "status": "unresolved",
+      "feature_ids": [
+        "f:export"
+      ],
+      "reason": "export promised but no implementation in inspected dispatch",
+      "impact": "export cannot be confirmed reachable",
+      "evidence": [
+        "code",
+        "doc"
+      ]
+    }
+  ],
+  "scope_impacts": [
+    {
+      "source": "inspection:dynamic-registration",
+      "reason": "fixture has no deployment configuration or non-Python execution; runtime extension unresolved",
+      "impact": "extension capabilities remain unknown"
+    },
+    {
+      "source": "inspection:unmapped-paths",
+      "reason": "fixture has no deployment configuration or non-Python execution; runtime extension unresolved",
+      "impact": "extension capabilities remain unknown"
+    }
+  ]
+}
